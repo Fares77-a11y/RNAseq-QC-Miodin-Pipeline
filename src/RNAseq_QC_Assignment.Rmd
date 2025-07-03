@@ -1,5 +1,5 @@
 ---
-title: "Assignment 1"
+title: "RNAseq_QC_Assignment"
 author: "Fares Ibrahim"
 date: "17/09/2024"
 output:
@@ -15,8 +15,9 @@ editor_options:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Question 1
 
+
+#Study Design Explanation:
 
 Study Design Summary: The study investigates the transcriptomic changes
 induced by the experimental compound AD80 in comparison to Sorafenib in human hepatocellular carcinoma (HUH7)
@@ -68,7 +69,7 @@ knitr::kable(df, align = "r", caption ='Table 1: Comparative transcriptomic anal
 
 ```
 
-## Question 2
+
 
 ```{r Q2 code, message = FALSE}
 
@@ -152,7 +153,6 @@ export(Project,"dataset","Fares_Ibrahim")
 
 ```
 
-## Question 3
 
 Interpretation of Plots and Quality Assessment
 
@@ -162,7 +162,7 @@ Interpretation of Plots and Quality Assessment
 knitr::include_graphics("C:/Downloads/Bioinformatics assignment 1/Assignment1/exports/datasets/Fares_Ibrahim/qualityReports/RNAseq/Count data/Fares_Ibrahim RNAseq Count data PCA.pdf")
 
 ```
-Description and Interpretation of Principal Component Analysis (PCA) Plot:
+#Description and Interpretation of Principal Component Analysis (PCA) Plot:
 
 Axes: Two principal components, PC1 and PC2, which capture the largest variance in the dataset.
 PC1 (x-axis) accounts for 20% of the variance.
