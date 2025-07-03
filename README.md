@@ -74,8 +74,7 @@ BiocManager::install(c("DESeq2", "edgeR", "limma", "BioStudies"))
 ## 🔍 Dataset
 
 - **Public dataset**: [E-MTAB-7847 – ArrayExpress](https://www.ebi.ac.uk/biostudies/studies/E-MTAB-7847)
-- **Private dataset**: Omitted for confidentiality but used to demonstrate sample-level QC in `miodin`
-
+- **Private dataset**: a23farib_rnaseq.txt
 ---
 
 ## 👨‍💻 Author
