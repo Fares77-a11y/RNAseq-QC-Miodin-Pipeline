@@ -1,0 +1,217 @@
+---
+title: "Assignment 1"
+author: "Fares Ibrahim"
+date: "17/09/2024"
+output:
+    prettydoc::html_pretty:
+    theme: tactile
+    highlight: github
+editor_options: 
+  markdown: 
+    wrap: 72
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Question 1
+
+
+Study Design Summary: The study investigates the transcriptomic changes
+induced by the experimental compound AD80 in comparison to Sorafenib in human hepatocellular carcinoma (HUH7)
+and immortalized hepatocyte (THLE5B) cell lines. Both cell lines were treated for 24 hours with three different conditions: 
+0.05 micromolar AD80, 5 micromolar Sorafenib, and Vehicle (DMSO). RNA was collected after treatment and stored in RNAlater for
+RNA sequencing using the Qiagen RNeasy mini kit. The experiment includes multiple replicates for each condition
+across the two cell lines. HUH7 represents cancerous cells, while THLE5B represents normal hepatocytes, 
+allowing for comparative analysis between cancerous and non-cancerous cells under these treatments. 
+RNA-seq data from the experiment is available in both raw FASTQ files and processed forms for further analysis.
+
+```{r Q1 code, message = FALSE}
+#This is a code chunk, put all R code for question 1 here
+#Tables can be prepared as data frames and printed with knitr::kable
+
+#Load essential libraries
+library(BioStudies)
+library(knitr)
+
+#Check the path of your working directory
+getwd()
+#Create "data" file in the working directory where the data-set will be imported
+dir.create("data")
+#Import the data-set to the created "data" folder
+getBio("E-MTAB-7847", path="data")
+#Load the RNA-seq counts data file and read it
+countTable <- read.table(paste0("data/","E-MTAB-7847.sdrf.txt"), 
+                         header=TRUE, as.is=TRUE, sep="\t")
+# Display the first 6 rows of the countable dataframe to ensure it has been imported correctly
+head(countTable)
+
+#Extracting and removing duplicates 
+duplicated(countTable$Source.Name)
+dupli=duplicated(countTable$Source.Name)
+filtered=countTable[!dupli, ]
+
+# Define 3 factor vectors including ‘cell line’, RNA
+#interference and ‘compound’ for each sample
+cell_line=factor(filtered$Characteristics.cell.line.)
+Dose=factor(filtered$Factor.Value.dose.)
+compound=factor(filtered$Factor.Value.compound)
+#Mark sample names as the row names 
+source=filtered$Source.Name
+#Create a refined dataframe combining the defined factors and the row names
+df= data.frame(source,cell_line,Dose,compound)
+
+#Print table 
+knitr::kable(df, align = "r", caption ='Table 1: Comparative transcriptomic analysis of HUH7 and THLE5B cells treated with AD80 and Sorafenib')
+
+
+```
+
+## Question 2
+
+```{r Q2 code, message = FALSE}
+
+#load miodin library
+library(miodin)
+#Creat project
+Project<- MiodinProject(name = "Assignment1",author="Fares Ibrahim",path = ".")
+#Created Project summary
+mshow(Project)
+# Step 1: Find the file (assuming it's in the current working directory)
+file_path <- "a23farib_rnaseq.txt"
+# Step 2: Ensure the destination directory exists
+destination_directory <- "Assignment1"
+if (!dir.exists(destination_directory)) {
+  dir.create(destination_directory)
+}
+# Step 3: Move the file
+new_file_path <- file.path(destination_directory, file_path)
+file.rename(file_path, new_file_path)
+#Load private RNA-seq count data file 
+countTable2<- read.table(paste0("Assignment1/","a23farib_rnaseq.txt"), header=TRUE, as.is=TRUE,row.names=1,sep="\t")
+#define the object "Cell_Line" as factor
+Cell_Line = factor(c(rep("LineA", 5), rep("LineB", 10)),
+          levels=c("LineA","LineB"))
+
+# Create sample table
+sampleTable <- data.frame(
+  SampleName = colnames(countTable2), 
+  SamplingPoint =paste0("sp",rep(1,ncol(countTable2))), 
+  Cell_Line=Cell_Line)
+
+
+#Create assay table
+assayTable=data.frame(
+  SampleName=colnames(countTable2),
+  DataFile=paste0("Assignment1/","a23farib_rnaseq.txt"),
+  DataColumn=colnames(countTable2))
+
+#Creating a miodin study and Setting a case-control study design
+ms <- studyDesignCaseControl(
+  studyName = "Fares_Ibrahim",
+  factorName = "Cell_Line",  
+  caseName = "LineB",    
+  controlName = "LineA", 
+  contrastName = "Cell_Line",
+  numCase = 10,              
+  numControl = 5,          
+  sampleTable = sampleTable,
+  assayTable = assayTable,
+  assayTableName = "RNAseq")
+
+insert(ms, Project, overwrite = T)
+
+mshow(ms)
+
+#Create miodin workflow
+mw <- MiodinWorkflow(name="Fares_Ibrahim")
+mw <- mw + importProcessedData(
+  name = "RNA-seq importer",
+  experiment = "sequencing",
+  dataType = "rna",
+  studyName = "Fares_Ibrahim",
+  assayName = "RNAseq",
+  datasetName = "Fares_Ibrahim",  
+  contrastName = "Cell_Line"
+) %>%
+processSequencingData(
+  name = "RNA-seq processor",
+  contrastName = "Cell_Line",
+  filterLowCount = TRUE)
+
+mw=insert(mw,Project,overwrite=T)
+mshow(mw)
+#Execution
+mw=execute(mw)
+
+#Save and export data
+saveDataFile(Project)
+export(Project,"dataset","Fares_Ibrahim")
+
+
+```
+
+## Question 3
+
+Interpretation of Plots and Quality Assessment
+
+
+```{r, Fig 1, message = FALSE, fig.align='center', fig.cap='Figure 1: Caption', out.height=768, out.width=768, fig.pos='H'}
+#
+knitr::include_graphics("C:/Downloads/Bioinformatics assignment 1/Assignment1/exports/datasets/Fares_Ibrahim/qualityReports/RNAseq/Count data/Fares_Ibrahim RNAseq Count data PCA.pdf")
+
+```
+Description and Interpretation of Principal Component Analysis (PCA) Plot:
+
+Axes: Two principal components, PC1 and PC2, which capture the largest variance in the dataset.
+PC1 (x-axis) accounts for 20% of the variance.
+PC2 (y-axis) accounts for 12% of the variance.
+Data Points: Each point represents a sample from one of the two cell lines, LineA or LineB.
+Points are colored according to their group (LineA coloured green and LineB coloured orange).
+Interpretation:
+Samples from the same group should cluster together if they have fairly similar gene expression profiles.
+Separation between LineA and LineB indicates differential gene expression between these groups.
+Overlapping or scattered points within the same group suggest variability or potential outliers.
+Quality Assessment from PCA Plot:
+The PCA plot shows a clear separation between LineA and LineB across PC1, indicating distinct gene expression profiles for the two cell lines. However, variation in gene expression among cells in LineB is more pronounced in relevance to LineA. Accordingly, utilizing PC1, one sample clusters with LineB, but significantly deviates from all other samples in the group, suggesting a potential outlier. This sample instantly becomes an own cluster in relevance to all other samples in both cell lines, if PC2 was used to explain the variance.
+
+```{r, Fig 2, message = FALSE, fig.align='center', fig.cap='Figure 2: Caption', out.height=768, out.width=768, fig.pos='H'}
+#Here is how to insert a figure from a file on disk
+knitr::include_graphics("C:/Downloads/Bioinformatics assignment 1/Assignment1/exports/datasets/Fares_Ibrahim/qualityReports/RNAseq/Count data/Fares_Ibrahim RNAseq Count data Sample heatmap.pdf")
+
+```
+
+Description and Interpretation of the Heatmap:
+
+Axes: represent individual samples.
+Color Scale: Indicates the magnitude of absolute co-linearity (0-1) in gene expression across one sample and another.
+Lower relation values are typically shown in one color (shades of blue), while higher relation values are shown in another color (shades of red).
+Data Points: Each cell in the heatmap represents the magnitude of absolute correlation regarding gene expression across two samples.
+Clusters:
+Samples are clustered based on similarity in gene expression profiles.
+Ideal clustering shows that samples from the same group (LineA or LineB) cluster closely together.
+
+Quality Assessment from Heatmap:
+Samples belonging to the same group (LineA or LineB) should form distinct clusters.
+Outliers are samples that do not cluster well with their respective groups.
+
+From the heatmap:
+Samples from LineA are mostly clustered together on the right side of the heatmap.
+LineB_4,LineB_6, and LineB_8 show distinct separation from their group and are dissimilar to all other samples in the experiment, explained by the blue to deeper blue colored-cells.
+
+From the Hierarchical Clustering (Dendrogram):
+LineB_8, although clustering with the LineB samples,it exhibits the highest branch in the dendrogram alongside LineB_4 and LineB_6 which indicates low degree of similarity with the rest: shorter branches represent higher similarity, while longer branches indicate more distant relationships.
+
+
+Conclusion and Recommendations
+Quality of Dataset:
+The dataset overall shows a good distinction between LineA and LineB, indicating that the gene expression profiles are generally reliable.
+The main concern is the presence of outliers such as LineB_4 and LineB_6, and to a lighter extent LineB_8 which could not be confirmed as an outlier with full confidence.
+
+Outlier Handling:
+LineB_4 and LineB_6: These samples do not cluster with other LineB samples and may affect the analysis.
+
+Recommendation:
+Perform a further in-depth quality check on the outliers (LineB_4 and LineB_6) as well as LineB_8 to determine if their removal is justified.
+If these outliers are confirmed to be due to technical errors or biological anomalies unrelated to the experimental conditions, removing them before downstream analysis would likely improve the reliability of the results. Moreover, depending on the experimental goals, there could be no clear justification for their removal. For example, if understanding diversity within LineB is important, LineB_6 and  LineB_4 could be retained as they may represent meaningful biological or experimental variation. However, if the goal was to analyze typical behavior of LineB samples, LineB_6 and LineB_4 should be removed because they significantly deviates from the other samples, which may skew results. Finally, we should consider conducting the analysis with and without these samples to understand their impact.
